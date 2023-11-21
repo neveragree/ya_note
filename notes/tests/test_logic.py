@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from pytils.translit import slugify
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -14,12 +15,10 @@ class TestNoteCreation(TestCase):
     TITLE_TEXT = 'Заголовок-1'
     TEXT_TEXT = 'Текст'
     SLUG_TEXT = ''
-    SLUGIFY_TEXT = 'zagolovok-1'
     EMPTY_WARNING = 'Обязательное поле.'
 
     @classmethod
     def setUpTestData(cls):
-        # cls.detail_url = reverse('notes:detail')
         cls.add_url = reverse('notes:add')
         cls.user = User.objects.create(username='Автор')
         cls.auth_client = Client()
@@ -32,7 +31,7 @@ class TestNoteCreation(TestCase):
         cls.empty_form_data = {
             'title': '',
             'text': '',
-            'slug': cls.SLUGIFY_TEXT
+            'slug': slugify(cls.TITLE_TEXT)
         }
 
     def test_anonymous_user_cant_create_comment(self):
@@ -40,7 +39,7 @@ class TestNoteCreation(TestCase):
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 0)
 
-    def test_anonymous_user_cant_create_comment(self):
+    def test_user_can_create_comment(self):
         response = self.auth_client.post(self.add_url, data=self.form_data)
         self.assertRedirects(response, '/done/')
         notes_count = Note.objects.count()
@@ -62,7 +61,7 @@ class TestNoteCreation(TestCase):
             response,
             form='form',
             field='slug',
-            errors=f'{self.SLUGIFY_TEXT}{WARNING}'
+            errors=f'{slugify(self.TITLE_TEXT)}{WARNING}'
         )
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 1)
@@ -92,7 +91,6 @@ class TestNoteEditDelete(TestCase):
     TITLE_TEXT = 'Заголовок-1'
     TEXT_TEXT = 'Текст'
     SLUG_TEXT = ''
-    SLUGIFY_TEXT = 'zagolovok-1'
     NEW_TITLE_TEXT = 'Новый заголовок'
     NEW_TEXT_TEXT = 'Новый текст'
     NEW_SLUG_TEXT = 'new-slug'
@@ -146,4 +144,4 @@ class TestNoteEditDelete(TestCase):
         self.notes.refresh_from_db()
         self.assertEqual(self.notes.title, self.TITLE_TEXT)
         self.assertEqual(self.notes.text, self.TEXT_TEXT)
-        self.assertEqual(self.notes.slug, self.SLUGIFY_TEXT)
+        self.assertEqual(self.notes.slug, slugify(self.TITLE_TEXT))
